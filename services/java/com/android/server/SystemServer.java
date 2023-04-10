@@ -2865,6 +2865,8 @@ public final class SystemServer implements Dumpable {
                 t.traceEnd();
             }
 
+            mSystemServiceManager.startService(HideAppListService.class);
+
             // AttestationService
             t.traceBegin("AttestationService");
             mSystemServiceManager.startService(AttestationService.class);
