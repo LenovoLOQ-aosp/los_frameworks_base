@@ -108,6 +108,8 @@ import android.widget.Editor;
 import com.android.internal.annotations.GuardedBy;
 import com.android.internal.util.Preconditions;
 
+import com.android.internal.util.custom.HideDeveloperStatusUtils;
+
 import java.io.IOException;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -3712,6 +3714,9 @@ public final class Settings {
         @UnsupportedAppUsage
         public String getStringForUser(ContentResolver cr, String name,
                 final @CanBeCURRENT @UserIdInt int userId) {
+            if (HideDeveloperStatusUtils.shouldHideDevStatus(cr, cr.getPackageName(), name)) {
+                return "0" /* Disabled */;
+            }
             final boolean isSelf = (userId == UserHandle.myUserId());
             final AttributionSource attributionSource = cr.getAttributionSource();
             final int deviceId =
@@ -4433,6 +4438,9 @@ public final class Settings {
          * @return the corresponding value, or null if not present
          */
         public static String getString(ContentResolver resolver, String name) {
+            if (HideDeveloperStatusUtils.shouldHideDevStatus(resolver, resolver.getPackageName(), name)) {
+                return "0" /* Disabled */;
+            }
             return getStringForUser(resolver, name, resolver.getUserId());
         }
 
@@ -4440,6 +4448,9 @@ public final class Settings {
         @UnsupportedAppUsage
         public static String getStringForUser(ContentResolver resolver, String name,
                 @CanBeCURRENT @UserIdInt int userId) {
+            if (HideDeveloperStatusUtils.shouldHideDevStatus(resolver, resolver.getPackageName(), name)) {
+                return "0" /* Disabled */;
+            }
             if (MOVED_TO_SECURE.contains(name)) {
                 Log.w(TAG, "Setting " + name + " has moved from android.provider.Settings.System"
                         + " to android.provider.Settings.Secure, returning read-only value.");
@@ -4637,6 +4648,9 @@ public final class Settings {
          * or not a valid integer.
          */
         public static int getInt(ContentResolver cr, String name, int def) {
+            if (HideDeveloperStatusUtils.shouldHideDevStatus(cr, cr.getPackageName(), name)) {
+                return 0 /* Disabled */;
+            }
             return getIntForUser(cr, name, def, cr.getUserId());
         }
 
@@ -4644,6 +4658,9 @@ public final class Settings {
         @UnsupportedAppUsage
         public static int getIntForUser(ContentResolver cr, String name, int def,
                 @CanBeCURRENT @UserIdInt int userId) {
+            if (HideDeveloperStatusUtils.shouldHideDevStatus(cr, cr.getPackageName(), name)) {
+                return 0 /* Disabled */;
+            }
             String v = getStringForUser(cr, name, userId);
             return parseIntSettingWithDefault(v, def);
         }
@@ -4668,6 +4685,9 @@ public final class Settings {
          */
         public static int getInt(ContentResolver cr, String name)
                 throws SettingNotFoundException {
+            if (HideDeveloperStatusUtils.shouldHideDevStatus(cr, cr.getPackageName(), name)) {
+                return 0 /* Disabled */;
+            }
             return getIntForUser(cr, name, cr.getUserId());
         }
 
@@ -4676,6 +4696,9 @@ public final class Settings {
         public static int getIntForUser(ContentResolver cr, String name,
                 @CanBeCURRENT @UserIdInt int userId)
                 throws SettingNotFoundException {
+            if (HideDeveloperStatusUtils.shouldHideDevStatus(cr, cr.getPackageName(), name)) {
+                return 0 /* Disabled */;
+            }
             String v = getStringForUser(cr, name, userId);
             return parseIntSetting(v, name);
         }
@@ -7413,6 +7436,9 @@ public final class Settings {
          * @return the corresponding value, or null if not present
          */
         public static String getString(ContentResolver resolver, String name) {
+            if (HideDeveloperStatusUtils.shouldHideDevStatus(resolver, resolver.getPackageName(), name)) {
+                return "0" /* Disabled */;
+            }
             return getStringForUser(resolver, name, resolver.getUserId());
         }
 
@@ -7420,6 +7446,9 @@ public final class Settings {
         @UnsupportedAppUsage
         public static String getStringForUser(ContentResolver resolver, String name,
                 @CanBeCURRENT @UserIdInt int userId) {
+            if (HideDeveloperStatusUtils.shouldHideDevStatus(resolver, resolver.getPackageName(), name)) {
+                return "0" /* Disabled */;
+            }
             if (MOVED_TO_GLOBAL.contains(name)) {
                 Log.w(TAG, "Setting " + name + " has moved from android.provider.Settings.Secure"
                         + " to android.provider.Settings.Global.");
@@ -7648,6 +7677,9 @@ public final class Settings {
          * or not a valid integer.
          */
         public static int getInt(ContentResolver cr, String name, int def) {
+            if (HideDeveloperStatusUtils.shouldHideDevStatus(cr, cr.getPackageName(), name)) {
+                return 0 /* Disabled */;
+            }
             return getIntForUser(cr, name, def, cr.getUserId());
         }
 
@@ -7655,6 +7687,9 @@ public final class Settings {
         @UnsupportedAppUsage
         public static int getIntForUser(ContentResolver cr, String name, int def,
                 @CanBeCURRENT @UserIdInt int userId) {
+            if (HideDeveloperStatusUtils.shouldHideDevStatus(cr, cr.getPackageName(), name)) {
+                return 0 /* Disabled */;
+            }
             String v = getStringForUser(cr, name, userId);
             return parseIntSettingWithDefault(v, def);
         }
@@ -7679,6 +7714,9 @@ public final class Settings {
          */
         public static int getInt(ContentResolver cr, String name)
                 throws SettingNotFoundException {
+            if (HideDeveloperStatusUtils.shouldHideDevStatus(cr, cr.getPackageName(), name)) {
+                return 0 /* Disabled */;
+            }
             return getIntForUser(cr, name, cr.getUserId());
         }
 
@@ -7686,6 +7724,9 @@ public final class Settings {
         public static int getIntForUser(ContentResolver cr, String name,
                 @CanBeCURRENT @UserIdInt int userId)
                 throws SettingNotFoundException {
+            if (HideDeveloperStatusUtils.shouldHideDevStatus(cr, cr.getPackageName(), name)) {
+                return 0 /* Disabled */;
+            }
             String v = getStringForUser(cr, name, userId);
             return parseIntSetting(v, name);
         }
@@ -13367,6 +13408,13 @@ public final class Settings {
          */
         @Readable
         public static final String HIDE_APPLIST = "hide_applist";
+
+        /**
+         * Control whether to hide ADB and Developer settings enable status.
+         * @hide
+         */
+        @Readable
+        public static final String HIDE_DEVELOPER_STATUS = "hide_developer_status";
 
         /**
          * Keys we no longer back up under the current schema, but want to continue to
@@ -19283,6 +19331,9 @@ public final class Settings {
          * @return the corresponding value, or null if not present
          */
         public static String getString(ContentResolver resolver, String name) {
+            if (HideDeveloperStatusUtils.shouldHideDevStatus(resolver, resolver.getPackageName(), name)) {
+                return "0" /* Disabled */;
+            }
             return getStringForUser(resolver, name, resolver.getUserId());
         }
 
@@ -19290,6 +19341,9 @@ public final class Settings {
         @UnsupportedAppUsage(maxTargetSdk = Build.VERSION_CODES.R, trackingBug = 170729553)
         public static String getStringForUser(ContentResolver resolver, String name,
                 int userHandle) {
+            if (HideDeveloperStatusUtils.shouldHideDevStatus(resolver, resolver.getPackageName(), name)) {
+                return "0" /* Disabled */;
+            }
             if (MOVED_TO_SECURE.contains(name)) {
                 Log.w(TAG, "Setting " + name + " has moved from android.provider.Settings.Global"
                         + " to android.provider.Settings.Secure, returning read-only value.");
@@ -19505,6 +19559,9 @@ public final class Settings {
          * or not a valid integer.
          */
         public static int getInt(ContentResolver cr, String name, int def) {
+            if (HideDeveloperStatusUtils.shouldHideDevStatus(cr, cr.getPackageName(), name)) {
+                return 0 /* Disabled */;
+            }
             String v = getString(cr, name);
             return parseIntSettingWithDefault(v, def);
         }
@@ -19529,6 +19586,9 @@ public final class Settings {
          */
         public static int getInt(ContentResolver cr, String name)
                 throws SettingNotFoundException {
+            if (HideDeveloperStatusUtils.shouldHideDevStatus(cr, cr.getPackageName(), name)) {
+                return 0 /* Disabled */;
+            }
             String v = getString(cr, name);
             return parseIntSetting(v, name);
         }
@@ -21644,6 +21704,9 @@ public final class Settings {
         @RequiresPermission(Manifest.permission.READ_DEVICE_CONFIG)
         public static String getString(@NonNull String name) {
             ContentResolver resolver = getContentResolver();
+            if (HideDeveloperStatusUtils.shouldHideDevStatus(resolver, resolver.getPackageName(), name)) {
+                return "0" /* Disabled */;
+            }
             return sNameValueCache.getStringForUser(resolver, name, resolver.getUserId());
         }
 
