@@ -1066,4 +1066,12 @@ interface IActivityManager {
      * Unregisters the listener previously registered for ANR warning.
      */
     void unregisterAnrWarningListener(in IAnrWarningCallback callback);
+
+    String getSpoofPifConfig();
+
+    String getSpoofTrickyStoreTarget();
+
+    String getSpoofTrickyStoreKeyBox();
+
+    String getSpoofTrickyStorePatch();
 }
