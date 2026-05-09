@@ -1073,6 +1073,7 @@ interface IActivityManager {
     void unregisterAnrWarningListener(in IAnrWarningCallback callback);
 
     String getSpoofPifConfig();
+    String getSpoofPifSpoofPhotos();
     String getSpoofGamePropsConfig();
     String getSpoofTrickyStoreTarget();
     String getSpoofTrickyStoreKeyBox();
