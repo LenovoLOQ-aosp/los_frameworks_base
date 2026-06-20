@@ -28,6 +28,8 @@ import java.security.PublicKey;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
+import java.security.interfaces.ECPublicKey;
+import java.security.spec.ECPrivateKeySpec;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.RSAPrivateCrtKeySpec;
 import java.util.ArrayList;
@@ -187,7 +189,6 @@ public class KeyBoxManager {
                     normalizedAlgorithm = algorithm;
             }
 
-            PrivateKey privateKey = parsePrivateKey(privateKeyPem, normalizedAlgorithm);
             List<Certificate> certificates = new ArrayList<>();
             CertificateFactory certFactory = CertificateFactory.getInstance("X.509");
 
@@ -199,6 +200,8 @@ public class KeyBoxManager {
 
             if (!certificates.isEmpty()) {
                 PublicKey publicKey = ((X509Certificate) certificates.get(0)).getPublicKey();
+                PrivateKey privateKey = parsePrivateKey(
+                        privateKeyPem, normalizedAlgorithm, publicKey);
                 KeyPair keyPair = new KeyPair(publicKey, privateKey);
                 mKeyboxes.put(normalizedAlgorithm, new KeyBox(keyPair, certificates));
                 Log.i(TAG, "Added keybox for algorithm: " + normalizedAlgorithm);
@@ -208,13 +211,14 @@ public class KeyBoxManager {
         }
     }
 
-    private PrivateKey parsePrivateKey(String pem, String algorithm) throws Exception {
+    private PrivateKey parsePrivateKey(
+            String pem, String algorithm, PublicKey publicKey) throws Exception {
         String pemType = detectPemType(pem);
         byte[] keyBytes = parsePemContent(pem);
 
         if ("EC PRIVATE KEY".equals(pemType)
                 || ("EC".equals(algorithm) && pemType == null)) {
-            return parseEcPrivateKey(keyBytes, algorithm);
+            return parseEcPrivateKey(keyBytes, algorithm, publicKey);
         }
 
         if ("RSA PRIVATE KEY".equals(pemType)
@@ -228,7 +232,12 @@ public class KeyBoxManager {
                 return new KeyFactorySpi().generatePrivate(pkInfo);
             }
             if ("EC".equals(algorithm)) {
-                return new EC().generatePrivate(pkInfo);
+                try {
+                    PKCS8EncodedKeySpec spec = new PKCS8EncodedKeySpec(keyBytes);
+                    return KeyFactory.getInstance("EC").generatePrivate(spec);
+                } catch (Exception ignored) {
+                    return new EC().generatePrivate(pkInfo);
+                }
             }
             PKCS8EncodedKeySpec spec = new PKCS8EncodedKeySpec(keyBytes);
             return KeyFactory.getInstance(algorithm).generatePrivate(spec);
@@ -238,11 +247,21 @@ public class KeyBoxManager {
         return KeyFactory.getInstance(algorithm).generatePrivate(spec);
     }
 
-    private PrivateKey parseEcPrivateKey(byte[] keyBytes, String algorithm) throws Exception {
+    private PrivateKey parseEcPrivateKey(
+            byte[] keyBytes, String algorithm, PublicKey publicKey) throws Exception {
         try (ASN1InputStream asn1In = new ASN1InputStream(keyBytes)) {
             ASN1Primitive asn1 = asn1In.readObject();
             try {
                 ECPrivateKey ecPrivateKey = ECPrivateKey.getInstance(asn1);
+                if (publicKey instanceof ECPublicKey) {
+                    try {
+                        ECPrivateKeySpec spec = new ECPrivateKeySpec(
+                                ecPrivateKey.getKey(), ((ECPublicKey) publicKey).getParams());
+                        return KeyFactory.getInstance("EC").generatePrivate(spec);
+                    } catch (Exception e) {
+                        Log.w(TAG, "Failed to convert EC private key to JCA key", e);
+                    }
+                }
                 X9ECParameters ecParams = ECNamedCurveTable.getByOID(
                         (ASN1ObjectIdentifier) ecPrivateKey.getParameters());
                 ECDomainParameters domainParams = new ECDomainParameters(
@@ -252,7 +271,12 @@ public class KeyBoxManager {
                 return new BCECPrivateKey(algorithm, privParams, null);
             } catch (Exception e) {
                 PrivateKeyInfo pkInfo = PrivateKeyInfo.getInstance(asn1);
-                return new EC().generatePrivate(pkInfo);
+                try {
+                    PKCS8EncodedKeySpec spec = new PKCS8EncodedKeySpec(keyBytes);
+                    return KeyFactory.getInstance("EC").generatePrivate(spec);
+                } catch (Exception ignored) {
+                    return new EC().generatePrivate(pkInfo);
+                }
             }
         }
     }
