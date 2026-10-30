@@ -496,7 +496,6 @@ import com.android.internal.util.NamedLock;
 import com.android.internal.util.Preconditions;
 import com.android.internal.util.function.pooled.PooledLambda;
 import com.android.server.AlarmManagerInternal;
-import com.android.server.AxExtServiceFactory;
 import com.android.server.BootReceiver;
 import com.android.server.DeviceIdleInternal;
 import com.android.server.DisplayThread;
@@ -540,6 +539,7 @@ import com.android.server.power.stats.BatteryStatsImpl;
 import com.android.server.privatecompute.PccSandboxManagerInternal;
 import com.android.server.privatecompute.PrivateComputeStatsLogUtil;
 import com.android.server.sdksandbox.SdkSandboxManagerLocal;
+import com.android.server.spoof.SpoofManager;
 import com.android.server.stats.pull.StatsPullAtomService;
 import com.android.server.stats.pull.StatsPullAtomServiceInternal;
 import com.android.server.uri.GrantUri;
@@ -1793,6 +1793,8 @@ public class ActivityManagerService extends IActivityManager.Stub
      */
     @NonNull
     private final Freezer mFreezer;
+
+    private volatile SpoofManager mSpoofManager;
 
     /*
      * The default duration for the binder heavy hitter auto sampler
@@ -5995,10 +5997,6 @@ public class ActivityManagerService extends IActivityManager.Stub
             // Start PSI monitoring in LMKD if it was skipped earlier.
             ProcessList.startPsiMonitoringAfterBoot();
 
-            mHandler.postDelayed(() -> {
-                AxExtServiceFactory.onLateSystemReady();
-            }, 5000);
-
             mUserController.onBootComplete(
                     new IIntentReceiver.Stub() {
                         @Override
@@ -9900,8 +9898,10 @@ public class ActivityManagerService extends IActivityManager.Stub
             mComponentAliasResolver.onSystemReady(mConstants.mEnableComponentAlias,
                     mConstants.mComponentAliasOverrides);
             t.traceEnd(); // componentAlias
-            
-            AxExtServiceFactory.systemReady();
+
+            final SpoofManager spoofManager = new SpoofManager(mContext);
+            spoofManager.systemReady();
+            mSpoofManager = spoofManager;
 
             t.traceEnd(); // PhaseActivityManagerReady
         }
@@ -20955,25 +20955,40 @@ public class ActivityManagerService extends IActivityManager.Stub
         return mFreezer;
     }
 
-
     @Override
     public String getSpoofPifConfig() {
-        return AxExtServiceFactory.getSpoofManager().getPifConfig();
+        final SpoofManager spoofManager = mSpoofManager;
+        if (spoofManager == null) {
+            return null;
+        }
+        return spoofManager.getPifConfig();
     }
 
     @Override
     public String getSpoofTrickyStoreTarget() {
-        return AxExtServiceFactory.getSpoofManager().getTrickyStoreTarget();
+        final SpoofManager spoofManager = mSpoofManager;
+        if (spoofManager == null) {
+            return null;
+        }
+        return spoofManager.getTrickyStoreTarget();
     }
 
     @Override
     public String getSpoofTrickyStoreKeyBox() {
-        return AxExtServiceFactory.getSpoofManager().getTrickyStoreKeyBox();
+        final SpoofManager spoofManager = mSpoofManager;
+        if (spoofManager == null) {
+            return null;
+        }
+        return spoofManager.getTrickyStoreKeyBox();
     }
 
     @Override
     public String getSpoofTrickyStorePatch() {
-        return AxExtServiceFactory.getSpoofManager().getTrickyStorePatch();
+        final SpoofManager spoofManager = mSpoofManager;
+        if (spoofManager == null) {
+            return null;
+        }
+        return spoofManager.getTrickyStorePatch();
     }
 
     // Set of IntentCreatorToken objects that are currently active.
