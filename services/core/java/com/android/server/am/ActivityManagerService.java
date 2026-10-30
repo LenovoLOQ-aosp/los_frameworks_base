@@ -20961,7 +20961,7 @@ public class ActivityManagerService extends IActivityManager.Stub
         if (spoofManager == null) {
             return null;
         }
-        return spoofManager.getPifConfig();
+        return spoofManager.getPifConfig(Binder.getCallingUid());
     }
 
     @Override
@@ -20970,7 +20970,7 @@ public class ActivityManagerService extends IActivityManager.Stub
         if (spoofManager == null) {
             return null;
         }
-        return spoofManager.getTrickyStoreTarget();
+        return spoofManager.getTrickyStoreTarget(Binder.getCallingUid());
     }
 
     @Override
@@ -20979,7 +20979,7 @@ public class ActivityManagerService extends IActivityManager.Stub
         if (spoofManager == null) {
             return null;
         }
-        return spoofManager.getTrickyStoreKeyBox();
+        return spoofManager.getTrickyStoreKeyBox(Binder.getCallingUid());
     }
 
     @Override
@@ -20988,7 +20988,7 @@ public class ActivityManagerService extends IActivityManager.Stub
         if (spoofManager == null) {
             return null;
         }
-        return spoofManager.getTrickyStorePatch();
+        return spoofManager.getTrickyStorePatch(Binder.getCallingUid());
     }
 
     // Set of IntentCreatorToken objects that are currently active.
